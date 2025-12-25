@@ -1,9 +1,13 @@
 #include <iostream>
 
 #include "pathcore/Grid.h"
+#include "pathcore/SearchConfig.h"
 
 int main() {
     pathcore::Grid grid(10, 10);
+    pathcore::SearchConfig config;
+    config.neighborMode = pathcore::NeighborMode::Four;
+    config.useWeights = true;
     grid.setBlocked(pathcore::CellPos{3, 3}, true);
     grid.setBlocked(pathcore::CellPos{4, 3}, true);
     grid.fillCost(2);
