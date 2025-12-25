@@ -16,6 +16,30 @@
 
 #include "GridView.h"
 
+namespace {
+constexpr int kSpeedMin = 1;
+constexpr int kSpeedMax = 100;
+constexpr int kMaxIntervalMs = 30;
+constexpr int kTurnPenaltyMin = 1;
+constexpr int kTurnPenaltyMax = 10;
+
+int intervalForSpeed(int speed) {
+    if (speed >= kSpeedMax) {
+        return 0;
+    }
+    if (speed < kSpeedMin) {
+        speed = kSpeedMin;
+    }
+    const int steps = kSpeedMax - kSpeedMin;
+    const int numerator = kMaxIntervalMs * (kSpeedMax - speed);
+    int interval = (numerator + steps - 1) / steps;
+    if (interval < 1) {
+        interval = 1;
+    }
+    return interval;
+}
+} // namespace
+
 MainWindow::MainWindow(QWidget* parent)
     : QMainWindow(parent) {
     setWindowTitle("PathViz");
@@ -80,6 +104,19 @@ MainWindow::MainWindow(QWidget* parent)
     cornerAction->setChecked(appState_.allowCornerCutting());
     cornerAction->setEnabled(diagonalAction->isChecked());
 
+    turnPenaltyAction_ = toolbar->addAction("TurnPenalty");
+    turnPenaltyAction_->setCheckable(true);
+    turnPenaltyAction_->setShortcut(QKeySequence(Qt::Key_Z));
+    turnPenaltyAction_->setChecked(appState_.penalizeTurns());
+
+    turnPenaltySpin_ = new QSpinBox(toolbar);
+    turnPenaltySpin_->setRange(kTurnPenaltyMin, kTurnPenaltyMax);
+    turnPenaltySpin_->setValue(appState_.turnPenalty());
+    turnPenaltySpin_->setEnabled(turnPenaltyAction_->isChecked());
+    QWidgetAction* turnPenaltySpinAction = new QWidgetAction(toolbar);
+    turnPenaltySpinAction->setDefaultWidget(turnPenaltySpin_);
+    toolbar->addAction(turnPenaltySpinAction);
+
     toolbar->addSeparator();
 
     QActionGroup* toolsGroup = new QActionGroup(this);
@@ -124,7 +161,7 @@ MainWindow::MainWindow(QWidget* parent)
     toolbar->addWidget(speedLabel);
 
     QSpinBox* speedSpin = new QSpinBox(toolbar);
-    speedSpin->setRange(1, 200);
+    speedSpin->setRange(kSpeedMin, kSpeedMax);
     speedSpin->setValue(appState_.stepsPerTick());
     QWidgetAction* speedSpinAction = new QWidgetAction(toolbar);
     speedSpinAction->setDefaultWidget(speedSpin);
@@ -236,6 +273,23 @@ MainWindow::MainWindow(QWidget* parent)
         updateStatusBar();
     });
 
+    connect(turnPenaltyAction_, &QAction::toggled, this, [this](bool checked) {
+        appState_.setPenalizeTurns(checked);
+        if (turnPenaltySpin_) {
+            turnPenaltySpin_->setEnabled(checked);
+        }
+        gridView_->update();
+        updatePlayAction();
+        updateStatusBar();
+    });
+
+    connect(turnPenaltySpin_, QOverload<int>::of(&QSpinBox::valueChanged), this, [this](int value) {
+        appState_.setTurnPenalty(value);
+        gridView_->update();
+        updatePlayAction();
+        updateStatusBar();
+    });
+
     connect(wallAction, &QAction::triggered, this, [this](bool) {
         appState_.setTool(AppState::EditTool::DrawWall);
         updateStatusBar();
@@ -268,6 +322,9 @@ MainWindow::MainWindow(QWidget* parent)
 
     connect(speedSpin, QOverload<int>::of(&QSpinBox::valueChanged), this, [this](int value) {
         appState_.setStepsPerTick(value);
+        if (timer_) {
+            timer_->setInterval(intervalForSpeed(value));
+        }
         updateStatusBar();
     });
 
@@ -279,7 +336,7 @@ MainWindow::MainWindow(QWidget* parent)
     });
 
     timer_ = new QTimer(this);
-    timer_->setInterval(30);
+    timer_->setInterval(intervalForSpeed(appState_.stepsPerTick()));
     connect(timer_, &QTimer::timeout, this, [this]() {
         appState_.tick();
         gridView_->update();
@@ -296,6 +353,17 @@ void MainWindow::updateStatusBar() {
     if (weightsAction_ && weightsAction_->isChecked() != appState_.useWeights()) {
         QSignalBlocker blocker(weightsAction_);
         weightsAction_->setChecked(appState_.useWeights());
+    }
+    if (turnPenaltyAction_ && turnPenaltyAction_->isChecked() != appState_.penalizeTurns()) {
+        QSignalBlocker blocker(turnPenaltyAction_);
+        turnPenaltyAction_->setChecked(appState_.penalizeTurns());
+    }
+    if (turnPenaltySpin_ && turnPenaltySpin_->value() != appState_.turnPenalty()) {
+        QSignalBlocker blocker(turnPenaltySpin_);
+        turnPenaltySpin_->setValue(appState_.turnPenalty());
+    }
+    if (turnPenaltySpin_) {
+        turnPenaltySpin_->setEnabled(appState_.penalizeTurns());
     }
 
     QString statusText;
@@ -345,13 +413,15 @@ void MainWindow::updateStatusBar() {
     const QString neighborText =
         appState_.neighborMode() == pathcore::NeighborMode::Eight ? "8" : "4";
     const QString cornerText = appState_.allowCornerCutting() ? "On" : "Off";
+    const QString turnText =
+        appState_.penalizeTurns() ? QString::number(appState_.turnPenalty()) : "Off";
     const QString speedText = QString::number(appState_.stepsPerTick());
 
     statusBar()->showMessage(
         QString("Status: %1 | Alg: %2 | Tool: %3%4 | Weights: %5 | Neighbors: %6 | Corner: %7 | "
-                "Speed: %8")
+                "TurnPenalty: %8 | Speed: %9")
             .arg(statusText, algorithmText, toolText, costSegment, weightsText, neighborText,
-                cornerText, speedText));
+                cornerText, turnText, speedText));
 }
 
 void MainWindow::updatePlayAction() {

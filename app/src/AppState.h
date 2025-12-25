@@ -39,6 +39,8 @@ public:
     bool useWeights() const;
     pathcore::NeighborMode neighborMode() const;
     bool allowCornerCutting() const;
+    bool penalizeTurns() const;
+    int turnPenalty() const;
     int stepsPerTick() const;
 
     void setAlgorithm(AlgorithmKind kind);
@@ -47,6 +49,8 @@ public:
     void setUseWeights(bool enabled);
     void setNeighborMode(pathcore::NeighborMode mode);
     void setCornerCutting(bool enabled);
+    void setPenalizeTurns(bool enabled);
+    void setTurnPenalty(int value);
     void togglePlay();
     void pause();
     void stepOnce();

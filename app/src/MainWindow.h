@@ -6,6 +6,7 @@
 
 class QAction;
 class GridView;
+class QSpinBox;
 class QTimer;
 
 class MainWindow : public QMainWindow {
@@ -23,6 +24,8 @@ private:
     QAction* stepAction_{nullptr};
     QAction* resetAction_{nullptr};
     QAction* weightsAction_{nullptr};
+    QAction* turnPenaltyAction_{nullptr};
+    QSpinBox* turnPenaltySpin_{nullptr};
     QAction* dijkstraAction_{nullptr};
     QAction* aStarAction_{nullptr};
 };

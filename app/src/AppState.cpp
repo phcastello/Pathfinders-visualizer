@@ -64,6 +64,14 @@ bool AppState::allowCornerCutting() const {
     return config_.allowCornerCutting;
 }
 
+bool AppState::penalizeTurns() const {
+    return config_.penalizeTurns;
+}
+
+int AppState::turnPenalty() const {
+    return config_.turnPenalty;
+}
+
 int AppState::stepsPerTick() const {
     return stepsPerTick_;
 }
@@ -116,6 +124,29 @@ void AppState::setCornerCutting(bool enabled) {
         return;
     }
     config_.allowCornerCutting = enabled;
+    pause();
+    resetSearch();
+}
+
+void AppState::setPenalizeTurns(bool enabled) {
+    if (config_.penalizeTurns == enabled) {
+        return;
+    }
+    config_.penalizeTurns = enabled;
+    pause();
+    resetSearch();
+}
+
+void AppState::setTurnPenalty(int value) {
+    if (value < 1) {
+        value = 1;
+    } else if (value > 10) {
+        value = 10;
+    }
+    if (config_.turnPenalty == value) {
+        return;
+    }
+    config_.turnPenalty = value;
     pause();
     resetSearch();
 }
@@ -371,6 +402,8 @@ void AppState::buildHardcodedMap() {
     config_.neighborMode = pathcore::NeighborMode::Four;
     config_.useWeights = false;
     config_.allowCornerCutting = false;
+    config_.penalizeTurns = false;
+    config_.turnPenalty = 1;
     paintCost_ = 5;
 
     grid_.clearBlocked();

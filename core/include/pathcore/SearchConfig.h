@@ -13,6 +13,8 @@ struct SearchConfig {
     NeighborMode neighborMode{NeighborMode::Four};
     bool useWeights{false};
     bool allowCornerCutting{false};
+    bool penalizeTurns{false};
+    int turnPenalty{1};
 };
 
 } // namespace pathcore

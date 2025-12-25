@@ -87,6 +87,16 @@ SearchStatus AStar::step(std::size_t iterations) {
         }
 
         const CellPos pos = fromIndex(width, current.idx);
+        int prevDx = 0;
+        int prevDy = 0;
+        bool hasPrevDir = false;
+        const std::int32_t parentIdx = snapshot_.parent[idx];
+        if (parentIdx != SearchSnapshot::kNoParent && parentIdx >= 0 && parentIdx < snapshot_.size()) {
+            const CellPos parentPos = fromIndex(width, parentIdx);
+            prevDx = pos.x - parentPos.x;
+            prevDy = pos.y - parentPos.y;
+            hasPrevDir = true;
+        }
         std::vector<CellPos> neighbors;
         if (config_.neighborMode == NeighborMode::Four) {
             neighbors = grid().neighbors4(pos);
@@ -114,7 +124,15 @@ SearchStatus AStar::step(std::size_t iterations) {
 
             const std::int32_t stepCost =
                 config_.useWeights ? static_cast<std::int32_t>(grid().cost(neighbor)) : 1;
-            const std::int32_t newG = snapshot_.gScore[idx] + stepCost;
+            std::int32_t turnPenalty = 0;
+            if (config_.penalizeTurns && hasPrevDir && config_.turnPenalty > 0) {
+                const int dx = neighbor.x - pos.x;
+                const int dy = neighbor.y - pos.y;
+                if (dx != prevDx || dy != prevDy) {
+                    turnPenalty = config_.turnPenalty;
+                }
+            }
+            const std::int32_t newG = snapshot_.gScore[idx] + stepCost + turnPenalty;
 
             if (newG < snapshot_.gScore[nIndex]) {
                 snapshot_.gScore[nIndex] = newG;
