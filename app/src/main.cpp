@@ -1,12 +1,11 @@
 #include <QApplication>
-#include <QMainWindow>
+
+#include "MainWindow.h"
 
 int main(int argc, char *argv[]) {
     QApplication app(argc, argv);
 
-    QMainWindow window;
-    window.setWindowTitle("PathViz");
-    window.resize(900, 600);
+    MainWindow window;
     window.show();
 
     return app.exec();

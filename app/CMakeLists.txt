@@ -6,6 +6,9 @@ find_package(Qt6 REQUIRED COMPONENTS Widgets)
 
 add_executable(pathviz
     src/main.cpp
+    src/AppState.cpp
+    src/GridView.cpp
+    src/MainWindow.cpp
 )
 
 # Coloca o binário diretamente em /build (e não /build/app)
