@@ -1,0 +1,22 @@
+# Build artifacts
+/build/
+/CMakeFiles/
+/CMakeCache.txt
+/cmake_install.cmake
+/compile_commands.json
+/Makefile
+/*.cbp
+
+# Qt Creator
+*.pro.user
+*.pro.user.*
+*.qmlproject.user
+*.qmlproject.user.*
+
+# IDEs
+/.idea/
+/.vscode/
+
+# OS
+.DS_Store
+Thumbs.db

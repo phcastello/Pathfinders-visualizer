@@ -1,0 +1,1 @@
+#include "pathcore/Version.h"
