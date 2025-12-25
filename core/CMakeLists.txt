@@ -3,6 +3,7 @@ add_library(pathcore STATIC
     src/Grid.cpp
     src/Dijkstra.cpp
     src/AStar.cpp
+    src/MapIO.cpp
 )
 
 target_include_directories(pathcore
