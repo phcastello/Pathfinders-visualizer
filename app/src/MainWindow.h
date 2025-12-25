@@ -22,6 +22,7 @@ private:
     QAction* playAction_{nullptr};
     QAction* stepAction_{nullptr};
     QAction* resetAction_{nullptr};
+    QAction* weightsAction_{nullptr};
     QAction* dijkstraAction_{nullptr};
     QAction* aStarAction_{nullptr};
 };

@@ -33,6 +33,7 @@ public:
     void fillCost(int cost);
 
     std::vector<CellPos> neighbors4(CellPos p) const;
+    std::vector<CellPos> neighbors8(CellPos p) const;
 
 private:
     int width_ = 0;

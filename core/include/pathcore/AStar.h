@@ -7,6 +7,7 @@
 
 #include "pathcore/ISearch.h"
 #include "pathcore/SearchBase.h"
+#include "pathcore/SearchConfig.h"
 
 namespace pathcore {
 
@@ -37,7 +38,7 @@ private:
         }
     };
 
-    static std::int32_t manhattan(CellPos a, CellPos b);
+    static std::int32_t heuristic(CellPos a, CellPos b, NeighborMode mode);
     void rebuildPath(std::int32_t startIdx, std::int32_t goalIdx);
 
     std::priority_queue<QueueItem, std::vector<QueueItem>, QueueItemCompare> open_;

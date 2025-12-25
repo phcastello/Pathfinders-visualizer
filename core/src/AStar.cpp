@@ -1,5 +1,6 @@
 #include "pathcore/AStar.h"
 
+#include <algorithm>
 #include <cstddef>
 #include <cstdint>
 #include <cstdlib>
@@ -12,8 +13,13 @@
 
 namespace pathcore {
 
-std::int32_t AStar::manhattan(CellPos a, CellPos b) {
-    return static_cast<std::int32_t>(std::abs(a.x - b.x) + std::abs(a.y - b.y));
+std::int32_t AStar::heuristic(CellPos a, CellPos b, NeighborMode mode) {
+    const int dx = std::abs(a.x - b.x);
+    const int dy = std::abs(a.y - b.y);
+    if (mode == NeighborMode::Eight) {
+        return static_cast<std::int32_t>(std::max(dx, dy));
+    }
+    return static_cast<std::int32_t>(dx + dy);
 }
 
 bool AStar::reset(const Grid& grid, CellPos start, CellPos goal, const SearchConfig& config) {
@@ -27,7 +33,7 @@ bool AStar::reset(const Grid& grid, CellPos start, CellPos goal, const SearchCon
     const std::int32_t startIdx = static_cast<std::int32_t>(toIndex(width, start));
     const std::size_t startIndex = static_cast<std::size_t>(startIdx);
 
-    const std::int32_t hStart = manhattan(start, goal);
+    const std::int32_t hStart = heuristic(start, goal, config_.neighborMode);
     snapshot_.gScore[startIndex] = 0;
     snapshot_.fScore[startIndex] = hStart;
     snapshot_.parent[startIndex] = SearchSnapshot::kNoParent;
@@ -81,9 +87,24 @@ SearchStatus AStar::step(std::size_t iterations) {
         }
 
         const CellPos pos = fromIndex(width, current.idx);
-        // Ignore diagonal neighbor mode for now; use 4-way neighbors.
-        const std::vector<CellPos> neighbors = grid().neighbors4(pos);
+        std::vector<CellPos> neighbors;
+        if (config_.neighborMode == NeighborMode::Four) {
+            neighbors = grid().neighbors4(pos);
+        } else {
+            neighbors = grid().neighbors8(pos);
+        }
         for (const CellPos& neighbor : neighbors) {
+            if (config_.neighborMode == NeighborMode::Eight && !config_.allowCornerCutting) {
+                const int dx = neighbor.x - pos.x;
+                const int dy = neighbor.y - pos.y;
+                if (dx != 0 && dy != 0) {
+                    const CellPos adjX{pos.x + dx, pos.y};
+                    const CellPos adjY{pos.x, pos.y + dy};
+                    if (grid().isBlocked(adjX) || grid().isBlocked(adjY)) {
+                        continue;
+                    }
+                }
+            }
             const std::int32_t nIdx = static_cast<std::int32_t>(toIndex(width, neighbor));
             const std::size_t nIndex = static_cast<std::size_t>(nIdx);
 
@@ -98,7 +119,7 @@ SearchStatus AStar::step(std::size_t iterations) {
             if (newG < snapshot_.gScore[nIndex]) {
                 snapshot_.gScore[nIndex] = newG;
                 snapshot_.parent[nIndex] = current.idx;
-                const std::int32_t h = manhattan(neighbor, goal_);
+                const std::int32_t h = heuristic(neighbor, goal_, config_.neighborMode);
                 const std::int32_t newF = newG + h;
                 snapshot_.fScore[nIndex] = newF;
                 snapshot_.state[nIndex] = NodeState::Open;

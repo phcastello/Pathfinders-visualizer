@@ -126,4 +126,27 @@ std::vector<CellPos> Grid::neighbors4(CellPos p) const {
     return result;
 }
 
+std::vector<CellPos> Grid::neighbors8(CellPos p) const {
+    std::vector<CellPos> result;
+    result.reserve(8);
+
+    if (!inBounds(p)) {
+        return result;
+    }
+
+    for (int dy = -1; dy <= 1; ++dy) {
+        for (int dx = -1; dx <= 1; ++dx) {
+            if (dx == 0 && dy == 0) {
+                continue;
+            }
+            CellPos neighbor{p.x + dx, p.y + dy};
+            if (inBounds(neighbor) && !isBlocked(neighbor)) {
+                result.push_back(neighbor);
+            }
+        }
+    }
+
+    return result;
+}
+
 } // namespace pathcore

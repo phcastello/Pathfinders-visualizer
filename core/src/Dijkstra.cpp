@@ -72,9 +72,24 @@ SearchStatus Dijkstra::step(std::size_t iterations) {
         }
 
         const CellPos pos = fromIndex(width, current.idx);
-        // Ignore diagonal neighbor mode for now; use 4-way neighbors.
-        const std::vector<CellPos> neighbors = grid().neighbors4(pos);
+        std::vector<CellPos> neighbors;
+        if (config_.neighborMode == NeighborMode::Four) {
+            neighbors = grid().neighbors4(pos);
+        } else {
+            neighbors = grid().neighbors8(pos);
+        }
         for (const CellPos& neighbor : neighbors) {
+            if (config_.neighborMode == NeighborMode::Eight && !config_.allowCornerCutting) {
+                const int dx = neighbor.x - pos.x;
+                const int dy = neighbor.y - pos.y;
+                if (dx != 0 && dy != 0) {
+                    const CellPos adjX{pos.x + dx, pos.y};
+                    const CellPos adjY{pos.x, pos.y + dy};
+                    if (grid().isBlocked(adjX) || grid().isBlocked(adjY)) {
+                        continue;
+                    }
+                }
+            }
             const std::int32_t nIdx = static_cast<std::int32_t>(toIndex(width, neighbor));
             const std::size_t nIndex = static_cast<std::size_t>(nIdx);
 
