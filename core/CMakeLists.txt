@@ -2,6 +2,7 @@ add_library(pathcore STATIC
     src/Version.cpp
     src/Grid.cpp
     src/Dijkstra.cpp
+    src/AStar.cpp
 )
 
 target_include_directories(pathcore
