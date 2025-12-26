@@ -29,6 +29,8 @@ public:
     AppState();
 
     const pathcore::Grid& grid() const;
+    int gridWidth() const;
+    int gridHeight() const;
     const pathcore::SearchSnapshot* snapshot() const;
     pathcore::SearchStatus status() const;
     AlgorithmKind algorithm() const;
@@ -64,6 +66,7 @@ public:
     bool saveMap(const std::string& path, std::string* err = nullptr) const;
     bool loadMap(const std::string& path, std::string* err = nullptr);
     void newMap();
+    bool resizeGrid(int width, int height);
 
     bool applyWallAt(pathcore::CellPos p, bool blocked);
     bool applyCostAt(pathcore::CellPos p, int cost);

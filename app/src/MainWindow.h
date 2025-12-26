@@ -15,6 +15,7 @@ public:
     explicit MainWindow(const LaunchOptions& opts, QWidget* parent = nullptr);
 
 private:
+    bool showResizeGridDialog();
     void updateStatusBar();
     void updatePlayAction();
 

@@ -28,6 +28,14 @@ const pathcore::Grid& AppState::grid() const {
     return grid_;
 }
 
+int AppState::gridWidth() const {
+    return grid_.width();
+}
+
+int AppState::gridHeight() const {
+    return grid_.height();
+}
+
 const pathcore::SearchSnapshot* AppState::snapshot() const {
     if (!search_) {
         return nullptr;
@@ -409,6 +417,56 @@ void AppState::newMap() {
     paintCost_ = 5;
     pause();
     resetSearch();
+}
+
+bool AppState::resizeGrid(int width, int height) {
+    auto clampValue = [](int value, int minValue, int maxValue) {
+        if (value < minValue) {
+            return minValue;
+        }
+        if (value > maxValue) {
+            return maxValue;
+        }
+        return value;
+    };
+
+    width = clampValue(width, 5, 200);
+    height = clampValue(height, 5, 200);
+    if (width == grid_.width() && height == grid_.height()) {
+        return false;
+    }
+
+    grid_ = pathcore::Grid(width, height, 1);
+    grid_.clearBlocked();
+    grid_.fillCost(1);
+    config_.useWeights = false;
+
+    auto clampCoord = [](int value, int minValue, int maxValue) {
+        if (value < minValue) {
+            return minValue;
+        }
+        if (value > maxValue) {
+            return maxValue;
+        }
+        return value;
+    };
+
+    start_.x = clampCoord(1, 0, width - 1);
+    start_.y = clampCoord(1, 0, height - 1);
+    goal_.x = clampCoord(width - 2, 0, width - 1);
+    goal_.y = clampCoord(height - 2, 0, height - 1);
+
+    if (start_ == goal_) {
+        goal_ = pathcore::CellPos{width - 1, height - 1};
+        if (goal_ == start_) {
+            goal_ = pathcore::CellPos{0, 0};
+        }
+    }
+
+    paintCost_ = 5;
+    pause();
+    resetSearch();
+    return true;
 }
 
 void AppState::tick() {

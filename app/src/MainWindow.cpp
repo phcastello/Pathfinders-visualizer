@@ -2,9 +2,12 @@
 
 #include <QAction>
 #include <QActionGroup>
+#include <QDialog>
+#include <QDialogButtonBox>
 #include <QFileDialog>
 #include <QFileInfo>
 #include <QFont>
+#include <QFormLayout>
 #include <QKeySequence>
 #include <QLabel>
 #include <QMessageBox>
@@ -25,6 +28,8 @@ constexpr int kSpeedMax = 100;
 constexpr int kMaxIntervalMs = 30;
 constexpr int kTurnPenaltyMin = 1;
 constexpr int kTurnPenaltyMax = 10;
+constexpr int kGridSizeMin = 5;
+constexpr int kGridSizeMax = 200;
 
 int intervalForSpeed(int speed) {
     if (speed >= kSpeedMax) {
@@ -109,6 +114,9 @@ MainWindow::MainWindow(const LaunchOptions& opts, QWidget* parent)
 
     QAction* saveAction = toolbar->addAction("Save");
     saveAction->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_S));
+
+    QAction* gridAction = toolbar->addAction("Grid");
+    gridAction->setShortcut(QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_G));
 
     toolbar->addSeparator();
 
@@ -227,6 +235,16 @@ MainWindow::MainWindow(const LaunchOptions& opts, QWidget* parent)
 
     connect(newAction, &QAction::triggered, this, [this, costSpin](bool) {
         appState_.newMap();
+        costSpin->setValue(appState_.paintCost());
+        gridView_->update();
+        updatePlayAction();
+        updateStatusBar();
+    });
+
+    connect(gridAction, &QAction::triggered, this, [this, costSpin](bool) {
+        if (!showResizeGridDialog()) {
+            return;
+        }
         costSpin->setValue(appState_.paintCost());
         gridView_->update();
         updatePlayAction();
@@ -402,6 +420,43 @@ MainWindow::MainWindow(const LaunchOptions& opts, QWidget* parent)
     updateStatusBar();
 }
 
+bool MainWindow::showResizeGridDialog() {
+    QDialog dialog(this);
+    dialog.setWindowTitle("Resize Grid");
+
+    QVBoxLayout* layout = new QVBoxLayout(&dialog);
+
+    QLabel* infoLabel = new QLabel(
+        "Resizing creates a new empty map (clears walls and costs).", &dialog);
+    infoLabel->setWordWrap(true);
+    layout->addWidget(infoLabel);
+
+    QFormLayout* formLayout = new QFormLayout();
+    QSpinBox* widthSpin = new QSpinBox(&dialog);
+    widthSpin->setRange(kGridSizeMin, kGridSizeMax);
+    widthSpin->setValue(appState_.gridWidth());
+    formLayout->addRow("Width", widthSpin);
+
+    QSpinBox* heightSpin = new QSpinBox(&dialog);
+    heightSpin->setRange(kGridSizeMin, kGridSizeMax);
+    heightSpin->setValue(appState_.gridHeight());
+    formLayout->addRow("Height", heightSpin);
+    layout->addLayout(formLayout);
+
+    QDialogButtonBox* buttons =
+        new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, &dialog);
+    layout->addWidget(buttons);
+
+    connect(buttons, &QDialogButtonBox::accepted, &dialog, &QDialog::accept);
+    connect(buttons, &QDialogButtonBox::rejected, &dialog, &QDialog::reject);
+
+    if (dialog.exec() != QDialog::Accepted) {
+        return false;
+    }
+
+    return appState_.resizeGrid(widthSpin->value(), heightSpin->value());
+}
+
 void MainWindow::updateStatusBar() {
     if (weightsAction_ && weightsAction_->isChecked() != appState_.useWeights()) {
         QSignalBlocker blocker(weightsAction_);
@@ -470,12 +525,25 @@ void MainWindow::updateStatusBar() {
         appState_.penalizeTurns() ? QString::number(appState_.turnPenalty()) : "Off";
     const QString speedText = QString::number(appState_.stepsPerTick());
     const QString timeText = QString::number(appState_.algoTimeMs(), 'f', 2);
+    const QString gridText =
+        QString("%1x%2").arg(appState_.gridWidth()).arg(appState_.gridHeight());
 
-    statusBar()->showMessage(
-        QString("Status: %1 | Alg: %2 | Tool: %3%4 | Weights: %5 | Neighbors: %6 | Corner: %7 | "
-                "TurnPenalty: %8 | Speed: %9 | Time: %10 ms")
-            .arg(statusText, algorithmText, toolText, costSegment, weightsText, neighborText,
-                cornerText, turnText, speedText, timeText));
+    const QString message =
+        QString("Status: %1 | Alg: %2 | Tool: %3%4 | Grid: %5 | Weights: %6 | Neighbors: %7 | "
+                "Corner: %8 | TurnPenalty: %9 | Speed: %10 | Time: %11 ms")
+            .arg(statusText)
+            .arg(algorithmText)
+            .arg(toolText)
+            .arg(costSegment)
+            .arg(gridText)
+            .arg(weightsText)
+            .arg(neighborText)
+            .arg(cornerText)
+            .arg(turnText)
+            .arg(speedText)
+            .arg(timeText);
+
+    statusBar()->showMessage(message);
 }
 
 void MainWindow::updatePlayAction() {
