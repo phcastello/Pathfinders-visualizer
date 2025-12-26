@@ -65,6 +65,10 @@ public:
 
     bool saveMap(const std::string& path, std::string* err = nullptr) const;
     bool loadMap(const std::string& path, std::string* err = nullptr);
+    void replaceWorld(const pathcore::Grid& grid,
+        pathcore::CellPos start,
+        pathcore::CellPos goal,
+        bool useWeights);
     void newMap();
     bool resizeGrid(int width, int height);
 

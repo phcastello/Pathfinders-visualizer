@@ -10,6 +10,7 @@ add_executable(pathviz
     src/GridView.cpp
     src/LaunchDialog.cpp
     src/MainWindow.cpp
+    src/VersusView.cpp
 )
 
 # Coloca o binário diretamente em /build (e não /build/app)

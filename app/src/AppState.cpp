@@ -378,6 +378,27 @@ bool AppState::loadMap(const std::string& path, std::string* err) {
     return true;
 }
 
+void AppState::replaceWorld(const pathcore::Grid& grid,
+    pathcore::CellPos start,
+    pathcore::CellPos goal,
+    bool useWeights) {
+    grid_ = grid;
+    start_ = start;
+    goal_ = goal;
+
+    if (grid_.inBounds(start_) && grid_.isBlocked(start_)) {
+        grid_.setBlocked(start_, false);
+    }
+    if (grid_.inBounds(goal_) && grid_.isBlocked(goal_)) {
+        grid_.setBlocked(goal_, false);
+    }
+
+    config_.useWeights = useWeights;
+
+    pause();
+    resetSearch();
+}
+
 void AppState::newMap() {
     grid_.clearBlocked();
     grid_.fillCost(1);

@@ -1,6 +1,7 @@
 #include "GridView.h"
 
 #include <cmath>
+#include <utility>
 #include <QPainter>
 
 #include "AppState.h"
@@ -12,6 +13,18 @@ GridView::GridView(QWidget* parent)
 void GridView::setAppState(AppState* state) {
     state_ = state;
     update();
+}
+
+void GridView::setInteractive(bool enabled) {
+    interactive_ = enabled;
+}
+
+bool GridView::interactive() const {
+    return interactive_;
+}
+
+void GridView::setEditedCallback(std::function<void()> cb) {
+    onEdited_ = std::move(cb);
 }
 
 std::optional<GridView::GridLayout> GridView::computeLayout() const {
@@ -63,32 +76,38 @@ std::optional<pathcore::CellPos> GridView::cellFromMousePos(const QPoint& pos) c
     return pathcore::CellPos{x, y};
 }
 
-void GridView::applyToolAt(pathcore::CellPos cell, Qt::MouseButton button) {
+bool GridView::applyToolAt(pathcore::CellPos cell, Qt::MouseButton button) {
     if (!state_) {
-        return;
+        return false;
     }
 
     if (button != Qt::LeftButton) {
-        return;
+        return false;
     }
 
+    bool changed = false;
     switch (state_->tool()) {
     case AppState::EditTool::DrawWall:
-        state_->applyWallAt(cell, true);
+        changed = state_->applyWallAt(cell, true);
         break;
     case AppState::EditTool::EraseWall:
-        state_->applyWallAt(cell, false);
+        changed = state_->applyWallAt(cell, false);
         break;
     case AppState::EditTool::SetStart:
-        state_->setStartAt(cell);
+        changed = state_->setStartAt(cell);
         break;
     case AppState::EditTool::SetGoal:
-        state_->setGoalAt(cell);
+        changed = state_->setGoalAt(cell);
         break;
     case AppState::EditTool::PaintCost:
-        state_->applyCostAt(cell, state_->paintCost());
+        changed = state_->applyCostAt(cell, state_->paintCost());
         break;
     }
+
+    if (changed && onEdited_) {
+        onEdited_();
+    }
+    return changed;
 }
 
 void GridView::paintEvent(QPaintEvent* event) {
@@ -202,16 +221,23 @@ void GridView::mousePressEvent(QMouseEvent* event) {
     if (!event) {
         return;
     }
+    if (!interactive_) {
+        return;
+    }
     const auto cell = cellFromMousePos(event->pos());
     if (!cell) {
         return;
     }
-    applyToolAt(*cell, event->button());
-    update();
+    if (applyToolAt(*cell, event->button())) {
+        update();
+    }
 }
 
 void GridView::mouseMoveEvent(QMouseEvent* event) {
     if (!event) {
+        return;
+    }
+    if (!interactive_) {
         return;
     }
     if (!(event->buttons() & Qt::LeftButton)) {
@@ -221,8 +247,9 @@ void GridView::mouseMoveEvent(QMouseEvent* event) {
     if (!cell) {
         return;
     }
-    applyToolAt(*cell, Qt::LeftButton);
-    update();
+    if (applyToolAt(*cell, Qt::LeftButton)) {
+        update();
+    }
 }
 
 void GridView::mouseReleaseEvent(QMouseEvent* event) {

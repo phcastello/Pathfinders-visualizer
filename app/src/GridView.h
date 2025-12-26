@@ -1,5 +1,6 @@
 #pragma once
 
+#include <functional>
 #include <optional>
 #include <QMouseEvent>
 #include <QWidget>
@@ -13,6 +14,9 @@ public:
     explicit GridView(QWidget* parent = nullptr);
 
     void setAppState(AppState* state);
+    void setInteractive(bool enabled);
+    bool interactive() const;
+    void setEditedCallback(std::function<void()> cb);
 
 protected:
     void paintEvent(QPaintEvent* event) override;
@@ -31,7 +35,9 @@ private:
 
     std::optional<GridLayout> computeLayout() const;
     std::optional<pathcore::CellPos> cellFromMousePos(const QPoint& pos) const;
-    void applyToolAt(pathcore::CellPos cell, Qt::MouseButton button);
+    bool applyToolAt(pathcore::CellPos cell, Qt::MouseButton button);
 
     AppState* state_{nullptr};
+    bool interactive_{true};
+    std::function<void()> onEdited_{};
 };
