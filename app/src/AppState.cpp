@@ -1,8 +1,22 @@
 #include "AppState.h"
 
+#include <ctime>
+
 #include "pathcore/AStar.h"
 #include "pathcore/Dijkstra.h"
 #include "pathcore/MapIO.h"
+
+namespace {
+bool threadCpuTimeNs(std::uint64_t* out) {
+    timespec ts{};
+    if (clock_gettime(CLOCK_THREAD_CPUTIME_ID, &ts) != 0) {
+        return false;
+    }
+    *out = static_cast<std::uint64_t>(ts.tv_sec) * 1'000'000'000ull
+        + static_cast<std::uint64_t>(ts.tv_nsec);
+    return true;
+}
+} // namespace
 
 AppState::AppState()
     : grid_(40, 25, 1) {
@@ -74,6 +88,14 @@ int AppState::turnPenalty() const {
 
 int AppState::stepsPerTick() const {
     return stepsPerTick_;
+}
+
+std::uint64_t AppState::algoTimeNs() const {
+    return algoTimeNs_;
+}
+
+double AppState::algoTimeMs() const {
+    return static_cast<double>(algoTimeNs_) / 1e6;
 }
 
 void AppState::setAlgorithm(AlgorithmKind kind) {
@@ -187,11 +209,19 @@ void AppState::stepOnce() {
     if (!search_ || search_->status() != pathcore::SearchStatus::Running) {
         return;
     }
+    std::uint64_t t0 = 0;
+    std::uint64_t t1 = 0;
+    const bool ok0 = threadCpuTimeNs(&t0);
     search_->step(1);
+    const bool ok1 = threadCpuTimeNs(&t1);
+    if (ok0 && ok1 && t1 >= t0) {
+        algoTimeNs_ += t1 - t0;
+    }
 }
 
 void AppState::resetSearch() {
     createSearchIfNeeded();
+    algoTimeNs_ = 0;
     if (!search_) {
         return;
     }
@@ -392,7 +422,20 @@ void AppState::tick() {
         playing_ = false;
         return;
     }
-    search_->step(static_cast<std::size_t>(stepsPerTick_));
+    for (int i = 0; i < stepsPerTick_; ++i) {
+        if (search_->status() != pathcore::SearchStatus::Running) {
+            playing_ = false;
+            break;
+        }
+        std::uint64_t t0 = 0;
+        std::uint64_t t1 = 0;
+        const bool ok0 = threadCpuTimeNs(&t0);
+        search_->step(1);
+        const bool ok1 = threadCpuTimeNs(&t1);
+        if (ok0 && ok1 && t1 >= t0) {
+            algoTimeNs_ += t1 - t0;
+        }
+    }
     if (search_->status() != pathcore::SearchStatus::Running) {
         playing_ = false;
     }

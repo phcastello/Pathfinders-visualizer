@@ -416,12 +416,13 @@ void MainWindow::updateStatusBar() {
     const QString turnText =
         appState_.penalizeTurns() ? QString::number(appState_.turnPenalty()) : "Off";
     const QString speedText = QString::number(appState_.stepsPerTick());
+    const QString timeText = QString::number(appState_.algoTimeMs(), 'f', 2);
 
     statusBar()->showMessage(
         QString("Status: %1 | Alg: %2 | Tool: %3%4 | Weights: %5 | Neighbors: %6 | Corner: %7 | "
-                "TurnPenalty: %8 | Speed: %9")
+                "TurnPenalty: %8 | Speed: %9 | Time: %10 ms")
             .arg(statusText, algorithmText, toolText, costSegment, weightsText, neighborText,
-                cornerText, turnText, speedText));
+                cornerText, turnText, speedText, timeText));
 }
 
 void MainWindow::updatePlayAction() {

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdint>
 #include <memory>
 #include <string>
 
@@ -42,6 +43,8 @@ public:
     bool penalizeTurns() const;
     int turnPenalty() const;
     int stepsPerTick() const;
+    std::uint64_t algoTimeNs() const;
+    double algoTimeMs() const;
 
     void setAlgorithm(AlgorithmKind kind);
     void setTool(EditTool tool);
@@ -82,4 +85,5 @@ private:
     bool playing_{false};
     int stepsPerTick_{5};
     int paintCost_{5};
+    std::uint64_t algoTimeNs_{0};
 };
