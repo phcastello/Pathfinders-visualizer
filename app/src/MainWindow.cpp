@@ -4,14 +4,17 @@
 #include <QActionGroup>
 #include <QFileDialog>
 #include <QFileInfo>
+#include <QFont>
 #include <QKeySequence>
 #include <QLabel>
 #include <QMessageBox>
 #include <QSignalBlocker>
 #include <QSpinBox>
+#include <QStackedWidget>
 #include <QStatusBar>
 #include <QTimer>
 #include <QToolBar>
+#include <QVBoxLayout>
 #include <QWidgetAction>
 
 #include "GridView.h"
@@ -38,16 +41,62 @@ int intervalForSpeed(int speed) {
     }
     return interval;
 }
+
+AppState::AlgorithmKind toAppAlgorithm(AlgoKind kind) {
+    return kind == AlgoKind::AStar ? AppState::AlgorithmKind::AStar
+                                   : AppState::AlgorithmKind::Dijkstra;
+}
 } // namespace
 
-MainWindow::MainWindow(QWidget* parent)
-    : QMainWindow(parent) {
+MainWindow::MainWindow(const LaunchOptions& opts, QWidget* parent)
+    : QMainWindow(parent)
+    , options_(opts) {
     setWindowTitle("PathViz");
     resize(900, 600);
+    setStyleSheet(
+        "QMainWindow { background: #f3f6fb; }"
+        "QToolBar { background: #f8fafc; border-bottom: 1px solid #d6dee8; spacing: 6px; }"
+        "QToolButton { background: #e2e8f0; color: #1e293b; border: 1px solid #cbd5e1; "
+        "border-radius: 6px; padding: 4px 10px; }"
+        "QToolButton:hover { background: #dbeafe; border-color: #bfdbfe; }"
+        "QToolButton:checked { background: #2563eb; color: #f8fafc; border-color: #1d4ed8; }"
+        "QToolButton:disabled { color: #94a3b8; background: #e2e8f0; border-color: #cbd5e1; }"
+        "QSpinBox QLineEdit { background: #ffffff; border: 1px solid #cbd5e1; "
+        "border-radius: 6px; padding: 2px 6px; }"
+        "QStatusBar { background: #0f172a; color: #e2e8f0; }"
+        "QStatusBar::item { border: none; }");
 
-    gridView_ = new GridView(this);
+    if (options_.mode == AppMode::Single) {
+        appState_.setAlgorithm(toAppAlgorithm(options_.singleAlgo));
+    }
+
+    QStackedWidget* centralStack = new QStackedWidget(this);
+    gridView_ = new GridView(centralStack);
     gridView_->setAppState(&appState_);
-    setCentralWidget(gridView_);
+
+    QWidget* versusPlaceholder = new QWidget(centralStack);
+    QVBoxLayout* placeholderLayout = new QVBoxLayout(versusPlaceholder);
+    QLabel* placeholderTitle = new QLabel("Versus mode (WIP)", versusPlaceholder);
+    QFont titleFont = placeholderTitle->font();
+    titleFont.setPointSize(titleFont.pointSize() + 6);
+    titleFont.setBold(true);
+    placeholderTitle->setFont(titleFont);
+    placeholderTitle->setAlignment(Qt::AlignCenter);
+
+    QLabel* placeholderSubtitle =
+        new QLabel("Phase 13 will add side-by-side grids", versusPlaceholder);
+    placeholderSubtitle->setAlignment(Qt::AlignCenter);
+
+    placeholderLayout->addStretch();
+    placeholderLayout->addWidget(placeholderTitle);
+    placeholderLayout->addWidget(placeholderSubtitle);
+    placeholderLayout->addStretch();
+
+    centralStack->addWidget(gridView_);
+    centralStack->addWidget(versusPlaceholder);
+    centralStack->setCurrentWidget(
+        options_.mode == AppMode::Single ? gridView_ : versusPlaceholder);
+    setCentralWidget(centralStack);
 
     QToolBar* toolbar = addToolBar("Controls");
     toolbar->setMovable(false);
@@ -84,7 +133,11 @@ MainWindow::MainWindow(QWidget* parent)
 
     algorithmGroup->addAction(dijkstraAction_);
     algorithmGroup->addAction(aStarAction_);
-    dijkstraAction_->setChecked(true);
+    if (appState_.algorithm() == AppState::AlgorithmKind::Dijkstra) {
+        dijkstraAction_->setChecked(true);
+    } else {
+        aStarAction_->setChecked(true);
+    }
 
     toolbar->addSeparator();
 

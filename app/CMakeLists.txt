@@ -8,6 +8,7 @@ add_executable(pathviz
     src/main.cpp
     src/AppState.cpp
     src/GridView.cpp
+    src/LaunchDialog.cpp
     src/MainWindow.cpp
 )
 

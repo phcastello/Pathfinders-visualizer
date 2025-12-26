@@ -97,7 +97,7 @@ void GridView::paintEvent(QPaintEvent* event) {
     QPainter painter(this);
     painter.setRenderHint(QPainter::Antialiasing, false);
 
-    const QColor backgroundColor(245, 245, 245);
+    const QColor backgroundColor(243, 246, 251);
     painter.fillRect(rect(), backgroundColor);
 
     if (!state_) {
@@ -122,13 +122,13 @@ void GridView::paintEvent(QPaintEvent* event) {
     const pathcore::CellPos start = state_->start();
     const pathcore::CellPos goal = state_->goal();
 
-    const QColor wallColor(30, 30, 30);
-    const QColor unseenColor(235, 235, 235);
-    const QColor openColor(120, 200, 150);
-    const QColor closedColor(95, 140, 210);
-    const QColor pathColor(245, 215, 110);
-    const QColor startColor(60, 180, 90);
-    const QColor goalColor(220, 70, 70);
+    const QColor wallColor(15, 23, 42);
+    const QColor unseenColor(248, 250, 252);
+    const QColor openColor(52, 211, 153);
+    const QColor closedColor(96, 165, 250);
+    const QColor pathColor(251, 191, 36);
+    const QColor startColor(34, 197, 94);
+    const QColor goalColor(239, 68, 68);
 
     auto costShade = [](int cost) {
         if (cost < 1) {
@@ -136,8 +136,8 @@ void GridView::paintEvent(QPaintEvent* event) {
         } else if (cost > 10) {
             cost = 10;
         }
-        const int base = 235;
-        const int range = 45;
+        const int base = 242;
+        const int range = 55;
         const int value = base - ((cost - 1) * range) / 9;
         return QColor(value, value, value);
     };
@@ -145,7 +145,7 @@ void GridView::paintEvent(QPaintEvent* event) {
     const bool showCosts = state_->useWeights();
     const bool drawGridLines = cellSize >= 6.0;
     if (drawGridLines) {
-        painter.setPen(QPen(QColor(210, 210, 210)));
+        painter.setPen(QPen(QColor(214, 222, 232)));
     } else {
         painter.setPen(Qt::NoPen);
     }

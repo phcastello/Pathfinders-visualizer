@@ -3,6 +3,7 @@
 #include <QMainWindow>
 
 #include "AppState.h"
+#include "LaunchOptions.h"
 
 class QAction;
 class GridView;
@@ -11,12 +12,13 @@ class QTimer;
 
 class MainWindow : public QMainWindow {
 public:
-    explicit MainWindow(QWidget* parent = nullptr);
+    explicit MainWindow(const LaunchOptions& opts, QWidget* parent = nullptr);
 
 private:
     void updateStatusBar();
     void updatePlayAction();
 
+    LaunchOptions options_;
     AppState appState_;
     GridView* gridView_{nullptr};
     QTimer* timer_{nullptr};
